@@ -80,6 +80,14 @@ let html = `<div>
             </div>
         </div>
 
+        <div data-parent="type" data-visible-value="torrserver" class="hide">
+            <div class="settings-param selector" data-type="toggle" data-name="torrserver_search_type">
+                <div class="settings-param__name">#{settings_server_search_type}</div>
+                <div class="settings-param__value"></div>
+                <div class="settings-param__descr">#{settings_server_search_type_descr}</div>
+            </div>
+        </div>
+
         <div class="settings-param-title"><span>#{more}</span></div>
 
         <div class="settings-param selector" data-type="select" data-name="parse_lang">
