@@ -2,6 +2,7 @@ import Platform from '../core/platform.js'
 import Favorite from '../core/favorite.js'
 import Params from '../interaction/settings/params.js'
 import Bell from '../interaction/bell.js'
+import Activity from '../interaction/activity/activity.js'
 
 let reqCallback = {}
 let timeCallback = {}
