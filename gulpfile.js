@@ -416,6 +416,7 @@ exports.pack_webos   = series(sync_webos, uglify_task, public_webos, index_webos
 exports.pack_tizen   = series(sync_tizen, uglify_task, public_tizen, index_tizen);
 exports.pack_github  = series(sync_github, uglify_task, public_github, write_manifest, index_github);
 exports.pack_plugins = series(plugins);
+exports.bundle       = series(merge);
 exports.test         = series(test);
 exports.default = parallel(watch, browser_sync);
 exports.debug = series(enable_debug_mode, this.default)
