@@ -24,3 +24,29 @@
 
 1. Соберите образ `docker build --build-arg domain={domain} -t lampa . `
 2. Запустите контейнер `docker run -p 8080:80 -d --restart unless-stopped -it --name lampa lampa`
+
+### Автоматическая настройка торрент-парсеров (TorrServer, Jackett, Prowlarr)
+
+Чтобы не указывать адреса вручную в настройках приложения, передайте их через переменные окружения при запуске контейнера:
+
+* `TORRSERVER_URL` — адрес TorrServer
+* `JACKETT_URL`, `JACKETT_KEY` — адрес и API-ключ Jackett
+* `PROWLARR_URL`, `PROWLARR_KEY` — адрес и API-ключ Prowlarr
+* `PARSER_TORRENT_TYPE` — какой из бэкендов выше реально используется для поиска торрентов: `jackett`, `prowlarr` или `torrserver`. Любое другое значение игнорируется.
+* `PARSER_USE` — включает кнопку поиска торрентов на карточках фильмов/сериалов: `true` или `false`. Любое другое значение игнорируется.
+
+```
+docker run -p 8080:80 -d --restart unless-stopped -it --name lampa \
+  -e TORRSERVER_URL=http://192.168.1.10:8090 \
+  -e JACKETT_URL=http://192.168.1.11:9117 \
+  -e JACKETT_KEY=abc123 \
+  -e PROWLARR_URL=http://192.168.1.12:9696 \
+  -e PROWLARR_KEY=xyz789 \
+  -e PARSER_TORRENT_TYPE=prowlarr \
+  -e PARSER_USE=true \
+  lampa
+```
+
+Задавать нужно только те переменные, которые вам действительно нужны — остальные можно не указывать.
+
+Значения подставляются при старте контейнера. При каждой загрузке приложения они принудительно записываются в настройки (localStorage браузера), перезаписывая в том числе значения, заданные вручную в настройках приложения. Если переменная окружения не задана, соответствующее сохранённое значение не изменяется.
