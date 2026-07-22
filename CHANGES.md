@@ -2,9 +2,10 @@
 
 ## Docker/Podman: configure torrent parser URLs via environment variables
 
-Adds environment variables to the Docker/Podman image built from `index/github/`,
-so TorrServer, Jackett, and Prowlarr addresses/keys can be set from the
-container's configuration instead of manually through the app's settings UI.
+Adds environment variables to the Docker/Podman image (built from the
+`build/github/lampa/` gulp output), so TorrServer, Jackett, and Prowlarr
+addresses/keys can be set from the container's configuration instead of
+manually through the app's settings UI.
 
 - `index/github/plugins/modification.js` (new) — local plugin loaded automatically
   by the app on every startup (`src/core/plugins.js` always tries to load
@@ -48,11 +49,35 @@ container's configuration instead of manually through the app's settings UI.
   `httpd` image's default entrypoint.
 - `index/github/README.md` — documents the new env vars and force-override
   behavior.
+- `gulpfile.js` — exposes a new `bundle` task (`exports.bundle = series(merge)`).
+  `pack_github` consumes `dest/app.js` (via `uglify_task`) but never ran the
+  rollup `merge` step that produces it, so building the image from a fresh clone
+  failed with `ENOENT: ./dest/app.js`. `merge` calls `done()` before its stream
+  finishes writing, so it can't be chained into `pack_github` via `series` in a
+  single process — running it as its own gulp invocation lets the write flush on
+  process exit before `pack_github` starts.
 
-### Usage
+### Building the image
+
+The Docker image must be built from the assembled `build/github/lampa/`
+directory, **not** from `index/github/`. `index/github/` is only a template
+(index.html, Dockerfile, and the new `plugins/modification.js`); the actual app
+bundle and assets (`app.min.js`, `css/`, `vender/`, `lang/`, …) are layered in
+by the gulp `pack_github` task. Building straight from `index/github/` produces
+an image that 404s on every asset.
 
 ```
-podman build --build-arg domain={domain} -t lampa .
+npm install                 # first time only
+npx gulp bundle             # rollup -> dest/app.js  (separate command; see note above)
+npx gulp pack_github        # assembles build/github/lampa/ (app + assets + plugin)
+
+cd build/github/lampa
+podman build --build-arg domain=<your-domain-or-ip> -t lampa .
+```
+
+### Running
+
+```
 podman run -p 8080:80 -d --restart unless-stopped -it --name lampa \
   -e TORRSERVER_URL=http://192.168.1.10:8090 \
   -e JACKETT_URL=http://192.168.1.11:9117 \
@@ -68,6 +93,13 @@ Only set the variables you need — unset ones are left alone (existing stored
 values, if any, are preserved).
 
 ### Verified
+
+End-to-end on the deployment server: `npx gulp bundle && npx gulp pack_github`,
+then `podman build` from `build/github/lampa/` and `podman run` — the app loads
+and runs (no asset 404s), confirming the full build flow above. An earlier
+attempt building directly from `index/github/` produced an image that 404'd on
+`app.min.js`, `vender/*`, and `css/app.css`, which is what the
+`build/github/lampa/` build flow fixes.
 
 Built and ran the image locally with `podman build`/`podman run` for three
 scenarios — all five original env vars set, only a subset (Jackett) set, and
